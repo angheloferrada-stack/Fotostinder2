@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 void main() => runApp(const MyApp());
@@ -42,6 +43,7 @@ class _SwipePageState extends State<SwipePage> {
   final Set<String> _seen = {};
   List<String> _albums = [];
   AssetPathEntity? _all;
+  late SharedPreferences _prefs;
 
   int _index = 0;
   int _page = 0;
@@ -60,6 +62,8 @@ class _SwipePageState extends State<SwipePage> {
   }
 
   Future<void> _init() async {
+    _prefs = await SharedPreferences.getInstance();
+    _seen.addAll(_prefs.getStringList('seen') ?? []);
     final ps = await PhotoManager.requestPermissionExtend();
     if (!ps.hasAccess) {
       setState(() {
@@ -105,11 +109,18 @@ class _SwipePageState extends State<SwipePage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _saveSeen() async {
+    await _prefs.setStringList('seen', _seen.toList());
+  }
+
   // ---------- acciones ----------
 
   void _record(_Decision d) {
     _history.add(d);
-    if (d.type == 'keep') _seen.add(d.asset.id);
+    if (d.type == 'keep') {
+      _seen.add(d.asset.id);
+      _saveSeen();
+    }
     setState(() {
       _index++;
       _drag = Offset.zero;
@@ -125,6 +136,7 @@ class _SwipePageState extends State<SwipePage> {
     if (_history.isEmpty || _index == 0) return;
     final d = _history.removeLast();
     _seen.remove(d.asset.id);
+    _saveSeen();
     setState(() {
       _index--;
       _drag = Offset.zero;
@@ -268,6 +280,7 @@ class _SwipePageState extends State<SwipePage> {
     } catch (e) {
       lastError = e.toString();
     }
+    await _saveSeen();
     _history.clear();
     _assets.clear();
     _page = 0;
