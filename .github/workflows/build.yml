@@ -23,7 +23,7 @@ jobs:
       - name: Paquetes y permisos
         working-directory: app
         run: |
-          flutter pub add photo_manager video_player
+          flutter pub add photo_manager video_player shared_preferences
           M=android/app/src/main/AndroidManifest.xml
           sed -i '/<application/i <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>' $M
           sed -i '/<application/i <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>' $M
